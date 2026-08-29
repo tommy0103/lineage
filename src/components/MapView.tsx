@@ -5,6 +5,7 @@ import React from 'react';
 import { TurboModuleRegistry } from 'react-native';
 import { CityId } from '../data';
 import ChinaMap from './ChinaMap';
+import type { CardAnchor } from './RealMap';
 
 interface Props {
   width: number;
@@ -12,6 +13,7 @@ interface Props {
   selected: CityId;
   pulseKey: number;
   onCityPress: (id: CityId) => void;
+  cardAnchor: CardAnchor; // 仅真实地图使用；ChinaMap 降级时卡片停在初始位置
 }
 
 function hasMapLibreNative(): boolean {

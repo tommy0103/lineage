@@ -99,9 +99,9 @@ export const MAP_OFF: [number, number][] = [
   [113.6314, 34.7454], // 郑州
 ];
 
-// 初始相机中心（装下中国）
-export const MAP_CENTER: [number, number] = [104.0026, 35.9998];
-export const MAP_ZOOM = 3.1;
+// 初始相机视野（GCJ-02，与 Bing 中国版瓦片同坐标系）：[west, south, east, north]
+// 装下中国全境（含海南），由 Camera initialViewState 的 bounds 适配任意屏幕尺寸。
+export const MAP_BOUNDS: [number, number, number, number] = [73, 17.5, 135.5, 54];
 
 // 车型库：车系 / 编组 / 运营时速（mock 数据）
 export const MODELS: Record<string, { family: string; cars: number; speed: string }> = {

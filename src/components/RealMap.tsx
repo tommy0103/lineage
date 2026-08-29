@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, NativeSyntheticEvent, StyleSheet, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Camera,
   GeoJSONSource,
@@ -11,10 +12,11 @@ import {
   type MapRef,
   type PressEventWithFeatures,
   type StyleSpecification,
+  type ViewStateChangeEvent,
 } from '@maplibre/maplibre-react-native';
 import { colors } from '../theme';
 import { MAP_STYLE } from '../mapstyle';
-import { CityId, MAP_CENTER, MAP_HUBS, MAP_LIT, MAP_OFF, MAP_ZOOM } from '../data';
+import { CityId, MAP_BOUNDS, MAP_HUBS, MAP_LIT, MAP_OFF } from '../data';
 
 const AnimatedLine = Animated.createAnimatedComponent(Line);
 
@@ -41,18 +43,36 @@ const IMPORT_LINE_FC = fc([{
   geometry: { type: 'LineString', coordinates: [MAP_HUBS.shanghai, MAP_HUBS.hangzhou] },
 }]);
 
+// Web Mercator 世界坐标（单位：pt，瓦片 512 基准）。旋转/俯仰已禁用，bearing/pitch 恒 0，
+// 因此「经纬度 → 屏幕坐标」可以用 center+zoom 在本地精确换算，不必每帧走原生 project()。
+function merc(lng: number, lat: number, worldSize: number): [number, number] {
+  const x = ((lng + 180) / 360) * worldSize;
+  const siny = Math.sin((lat * Math.PI) / 180);
+  const y = (0.5 - Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI)) * worldSize;
+  return [x, y];
+}
+
+// 相机事件里驱动城市卡位置用的锚点（App 持有 Animated.ValueXY，避免每帧 setState 重渲整屏）
+export interface CardAnchor {
+  pos: Animated.ValueXY;
+  cardH: number;
+  onMeta: (meta: { up: boolean; x: number }) => void; // 箭头朝向/水平位置，变化才回调
+}
+
 interface Props {
   width: number;
   height: number;
   selected: CityId;
   pulseKey: number; // 递增即重放导入动画
   onCityPress: (id: CityId) => void;
+  cardAnchor: CardAnchor;
 }
 
-export default function RealMap({ width, height, selected, pulseKey, onCityPress }: Props) {
+export default function RealMap({ width, height, selected, pulseKey, onCityPress, cardAnchor }: Props) {
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<MapRef>(null);
   const [mapReady, setMapReady] = useState(false);
-  // 导入动画的屏幕坐标锚点（地图手势全禁、相机静止，投影结果不会漂移）
+  // 导入动画的屏幕坐标锚点（动画 2 秒内若用户拖动地图会漂移，播完即消失，可接受）
   const [hzPx, setHzPx] = useState<[number, number] | null>(null);
   const [shPx, setShPx] = useState<[number, number] | null>(null);
 
@@ -60,6 +80,60 @@ export default function RealMap({ width, height, selected, pulseKey, onCityPress
 
   const pulse = useRef(new Animated.Value(0)).current;
   const arc = useRef(new Animated.Value(0)).current;
+
+  // ---------- 城市卡锚定 ----------
+  const { pos: cardPos, cardH, onMeta } = cardAnchor;
+  // 最近一次相机状态（region 事件每帧更新；初始为 null，用一次性 project() 兜底）
+  const viewState = useRef<{ center: [number, number]; zoom: number } | null>(null);
+
+  // 把选中城市的屏幕坐标换算成卡片位置：默认卡片在点上方（箭头朝下），
+  // 上方会盖住搜索胶囊则翻到点下方（箭头朝上，对应 mock 的 arrowTop），水平 clamp 留 12pt。
+  const layoutCard = useCallback(
+    (px: number, py: number) => {
+      const cardW = 244 * (width / 390); // 同 CityCard 的宽度算法
+      const GAP = 16;
+      const topMin = insets.top + 8 + 48 + 12; // 搜索胶囊底部
+      const left = Math.min(Math.max(px - cardW / 2, 12), width - cardW - 12);
+      const aboveTop = py - GAP - cardH;
+      const up = aboveTop < topMin;
+      cardPos.setValue({ x: left, y: up ? py + GAP : aboveTop });
+      onMeta({ up, x: Math.min(Math.max(px - left, 24), cardW - 24) });
+    },
+    [width, cardH, insets.top, cardPos, onMeta]
+  );
+
+  const layoutFromViewState = useCallback(
+    (center: [number, number], zoom: number, city: CityId) => {
+      const ws = 512 * 2 ** zoom;
+      const [cx, cy] = merc(center[0], center[1], ws);
+      const c = MAP_HUBS[city];
+      const [x, y] = merc(c[0], c[1], ws);
+      layoutCard(x - cx + width / 2, y - cy + height / 2);
+    },
+    [layoutCard, width, height]
+  );
+
+  // 相机每帧变化（拖动/缩放中）与停下时都重投影卡片锚点
+  const onRegionChange = useCallback(
+    (e: NativeSyntheticEvent<ViewStateChangeEvent>) => {
+      const { center, zoom } = e.nativeEvent;
+      viewState.current = { center, zoom };
+      layoutFromViewState(center, zoom, selected);
+    },
+    [layoutFromViewState, selected]
+  );
+
+  // 选中城市变化 / 卡片高度就位 / 地图就绪：立即重锚定一次
+  useEffect(() => {
+    const vs = viewState.current;
+    if (vs) {
+      layoutFromViewState(vs.center, vs.zoom, selected);
+    } else if (mapReady) {
+      mapRef.current?.project(MAP_HUBS[selected]).then((p) => {
+        if (p) layoutCard(p[0], p[1]);
+      });
+    }
+  }, [selected, mapReady, layoutFromViewState, layoutCard]);
 
   useEffect(() => {
     if (pulseKey === 0 || !mapReady) return;
@@ -110,9 +184,9 @@ export default function RealMap({ width, height, selected, pulseKey, onCityPress
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         mapStyle={MAP_STYLE as unknown as StyleSpecification}
-        dragPan={false}
-        touchZoom={false}
-        doubleTapZoom={false}
+        dragPan
+        touchZoom
+        doubleTapZoom
         doubleTapHoldZoom={false}
         touchRotate={false}
         touchPitch={false}
@@ -120,10 +194,21 @@ export default function RealMap({ width, height, selected, pulseKey, onCityPress
         scaleBar={false}
         logo={false}
         attribution
-        attributionPosition={{ bottom: 6, left: 6 }}
+        attributionPosition={{ top: insets.top + 68, left: 12 }}
+        onRegionIsChanging={onRegionChange}
+        onRegionDidChange={onRegionChange}
         onDidFinishLoadingMap={() => setMapReady(true)}
       >
-        <Camera initialViewState={{ center: MAP_CENTER, zoom: MAP_ZOOM }} minZoom={2.5} maxZoom={12} />
+        {/* bounds 适配任意屏幕尺寸装下中国；padding 底部给 sheet 留位、顶部避开搜索胶囊。
+            minZoom 取 1.5：留了底部 padding 后初始 fit 可能低到约 1.9，再大就把中国裁掉。 */}
+        <Camera
+          initialViewState={{
+            bounds: MAP_BOUNDS,
+            padding: { top: insets.top + 76, right: 12, bottom: Math.round(height * 0.4), left: 12 },
+          }}
+          minZoom={1.5}
+          maxZoom={12}
+        />
 
         {/* 未到访城市：灰点 */}
         <GeoJSONSource id="off" data={OFF_FC}>

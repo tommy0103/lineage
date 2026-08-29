@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View,
+  Alert, Modal, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -218,8 +218,12 @@ export default function TicketModal({ visible, trip, onClose }: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={styles.modal}>
+        {/* iOS 才叠真模糊；且 BlurView 要在无 padding 的层里（padding 会把 absoluteFill 内缩） */}
+        {Platform.OS === 'ios' ? (
+          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+        ) : null}
+        <View style={styles.overlayInner}>
+          <View style={styles.modal}>
           <View style={styles.head}>
             <Text style={styles.headTitle}>导出车票</Text>
             <Pressable style={styles.close} onPress={onClose} hitSlop={6}>
@@ -251,6 +255,7 @@ export default function TicketModal({ visible, trip, onClose }: Props) {
           <Pressable onPress={onClose} style={({ pressed }) => [styles.btnGhost, pressed && { opacity: 0.6 }]}>
             <Text style={styles.btnGhostText}>取消</Text>
           </Pressable>
+          </View>
         </View>
       </View>
     </Modal>
@@ -262,10 +267,13 @@ export default function TicketModal({ visible, trip, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
+    backgroundColor: inkA(0.38),
+  },
+  overlayInner: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 22,
-    backgroundColor: inkA(0.38),
   },
   modal: {
     width: '100%',

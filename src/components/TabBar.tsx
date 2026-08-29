@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme';
@@ -14,21 +14,27 @@ interface Props {
 export default function TabBar({ reviewActive, onReview, onImport }: Props) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.bar, { paddingBottom: insets.bottom }]}>
-      <BlurView intensity={50} tint="light" style={StyleSheet.absoluteFill} />
-      <Pressable style={styles.item} onPress={onReview}>
-        <ReviewIcon color={reviewActive ? colors.accent : colors.ink2} />
-        <Text style={[styles.label, reviewActive && styles.labelActive]}>回顾</Text>
-      </Pressable>
-      <Pressable style={styles.item} onPress={onImport} accessibilityLabel="导入截图">
-        <View style={styles.importBtn}>
-          <PlusIcon color="#fff" />
-        </View>
-      </Pressable>
-      <Pressable style={styles.item}>
-        <ProfileIcon color={colors.ink2} />
-        <Text style={styles.label}>我的</Text>
-      </Pressable>
+    <View style={styles.bar}>
+      {/* iOS 才叠真模糊；Android 用半透明底（见 Glass 的说明）。
+          BlurView 不能放在带 padding 的层里，会被内缩成内嵌白盒。 */}
+      {Platform.OS === 'ios' ? (
+        <BlurView intensity={50} tint="light" style={StyleSheet.absoluteFill} />
+      ) : null}
+      <View style={[styles.barInner, { paddingBottom: insets.bottom }]}>
+        <Pressable style={styles.item} onPress={onReview}>
+          <ReviewIcon color={reviewActive ? colors.accent : colors.ink2} />
+          <Text style={[styles.label, reviewActive && styles.labelActive]}>回顾</Text>
+        </Pressable>
+        <Pressable style={styles.item} onPress={onImport} accessibilityLabel="导入截图">
+          <View style={styles.importBtn}>
+            <PlusIcon color="#fff" />
+          </View>
+        </Pressable>
+        <Pressable style={styles.item}>
+          <ProfileIcon color={colors.ink2} />
+          <Text style={styles.label}>我的</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -39,12 +45,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingTop: 10,
     backgroundColor: colors.tabBg,
     borderTopWidth: 1,
     borderTopColor: colors.glassBorder,
+  },
+  barInner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingTop: 10,
   },
   item: {
     flex: 1,

@@ -1,12 +1,12 @@
-import React, { useCallback, useState } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { Animated, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { BlurView } from 'expo-blur';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, glassShadow } from './src/theme';
 import { ALL_TRIPS, CITIES, CityId, dateKey, Trip } from './src/data';
 import MapView from './src/components/MapView';
 import CityCard from './src/components/CityCard';
+import Glass from './src/components/Glass';
 import BottomSheet, { CityListData, Pane, ReviewMode } from './src/components/BottomSheet';
 import TabBar from './src/components/TabBar';
 import TicketModal from './src/components/TicketModal';
@@ -121,27 +121,45 @@ function Screen() {
     bumpNotes((v) => v + 1);
   }, [currentTrip]);
 
-  const mapHeight = winH * 0.58; // 原 mock 地图视觉占比约屏高 55–60%
-  const cardTop = insets.top + 8 + 48 + 12; // 搜索胶囊下方
+  // 地图满屏（absoluteFill），sheet / 搜索胶囊 / tab bar 全部叠在地图上，不再有底色接缝。
+  // ChinaMap 降级方案按自身宽高比布局在顶部，不受影响。
+
+  // ---------- 城市卡锚定（真实地图由 RealMap 相机事件驱动；降级地图停在搜索胶囊下方） ----------
+  const cardPos = useRef(
+    new Animated.ValueXY({ x: 16, y: insets.top + 8 + 48 + 12 })
+  ).current;
+  const [cardH, setCardH] = useState(140); // 估算值，onLayout 后校准
+  const [cardArrow, setCardArrow] = useState({ up: true, x: 30 });
+  const onCardMeta = useCallback(
+    (m: { up: boolean; x: number }) =>
+      setCardArrow((cur) => (cur.up === m.up && Math.abs(cur.x - m.x) < 0.5 ? cur : m)),
+    []
+  );
+  const cardAnchor = useMemo(
+    () => ({ pos: cardPos, cardH, onMeta: onCardMeta }),
+    [cardPos, cardH, onCardMeta]
+  );
 
   return (
     <View style={styles.screen}>
       <StatusBar style="dark" />
-      <View style={{ position: 'absolute', top: 0, left: 0 }}>
-        <MapView width={winW} height={mapHeight} selected={selectedCity} pulseKey={pulseKey} onCityPress={selectCity} />
+      <View style={StyleSheet.absoluteFill}>
+        <MapView width={winW} height={winH} selected={selectedCity} pulseKey={pulseKey} onCityPress={selectCity} cardAnchor={cardAnchor} />
       </View>
 
       {/* 搜索胶囊（车次反查入口，mock 中无点击行为） */}
-      <View style={[styles.search, glassShadow, { top: insets.top + 8 }]}>
-        <BlurView intensity={50} tint="light" style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} />
+      <Glass radius={24} style={[styles.search, glassShadow, { top: insets.top + 8 }]} contentStyle={styles.searchInner}>
         <SearchIcon color={colors.ink2} />
         <Text style={styles.searchText}>搜车次、城市或车站</Text>
-      </View>
+      </Glass>
 
       <CityCard
         city={CITIES[selectedCity]}
         visible={cardVisible}
-        top={cardTop}
+        pos={cardPos}
+        arrowUp={cardArrow.up}
+        arrowX={cardArrow.x}
+        onHeight={setCardH}
         onClose={() => setCardVisible(false)}
         onShowAll={onShowCityTrips}
       />
@@ -198,15 +216,13 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     height: 48,
-    borderRadius: 24,
+  },
+  searchInner: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 18,
-    backgroundColor: colors.glass,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-    overflow: 'hidden',
   },
   searchText: { fontSize: 15, color: colors.ink2 },
 });

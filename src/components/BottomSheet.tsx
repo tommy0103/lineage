@@ -2,9 +2,9 @@ import React from 'react';
 import {
   Pressable, ScrollView, StyleSheet, Text, TextStyle, useWindowDimensions, View,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, glassShadow, inkA } from '../theme';
+import Glass from './Glass';
 import {
   ALL_TRIPS, CITIES, CityId, dateKey, intervalName, intervalOthers, MODELS,
   seatParts, ticketParts, trainOrdinal, trainOthers, Trip,
@@ -100,15 +100,11 @@ export default function BottomSheet(props: Props) {
   const maxH = winH - tallTop - bottom;
 
   return (
-    <View
-      style={[
-        styles.sheet,
-        glassShadow,
-        { bottom },
-        tall ? { top: tallTop } : { maxHeight: maxH },
-      ]}
+    <Glass
+      radius={20}
+      style={[styles.sheet, glassShadow, { bottom }, tall ? { top: tallTop } : { maxHeight: maxH }]}
+      contentStyle={styles.sheetContent}
     >
-      <BlurView intensity={50} tint="light" style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
       <View style={styles.grabber} />
       {pane === 'home' && <HomePane {...props} />}
       {pane === 'city' && <CityPane {...props} />}
@@ -116,7 +112,7 @@ export default function BottomSheet(props: Props) {
       {pane === 'trip' && <TripPane {...props} />}
       {pane === 'import' && <ImportPane {...props} />}
       {pane === 'imported' && <ImportedPane {...props} />}
-    </View>
+    </Glass>
   );
 }
 
@@ -445,14 +441,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 12,
     right: 12,
-    borderRadius: 20,
+  },
+  sheetContent: {
     paddingTop: 10,
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: colors.glass,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-    overflow: 'hidden',
+    flexGrow: 1,
+    flexShrink: 1,
+    minHeight: 0,
   },
   grabber: {
     width: 36,
