@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@maplibre/maplibre-react-native": "^11.3.7",
+    "coordtransform": "^2.1.2",
     "expo": "~57.0.18",
     "expo-blur": "~57.0.2",
     "expo-linear-gradient": "~57.0.1",

@@ -20,6 +20,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-sharing",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "允许 Lineage 把车票 PNG 存进相册",
+          "savePhotosPermission": "允许 Lineage 把车票 PNG 存进相册",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      "@maplibre/maplibre-react-native"
+    ]
   }
 }
