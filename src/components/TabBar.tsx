@@ -1,8 +1,8 @@
 import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme';
+import { GlassBlur } from './Glass';
 import { PlusIcon, ProfileIcon, ReviewIcon } from './icons';
 
 interface Props {
@@ -15,11 +15,11 @@ export default function TabBar({ reviewActive, onReview, onImport }: Props) {
   const insets = useSafeAreaInsets();
   return (
     <View style={styles.bar}>
-      {/* iOS 才叠真模糊；Android 用半透明底（见 Glass 的说明）。
-          BlurView 不能放在带 padding 的层里，会被内缩成内嵌白盒。 */}
-      {Platform.OS === 'ios' ? (
-        <BlurView intensity={50} tint="light" style={StyleSheet.absoluteFill} />
-      ) : null}
+      {/* 模糊层统一走 GlassBlur（内部已配 blurMethod + blurTarget）。
+          注意这一层不能加 padding，会把 absoluteFill 内缩成内嵌白盒。 */}
+      <GlassBlur />
+      {/* 半透明白盖在模糊之上（同 Glass 的叠放顺序），不要垫在 BlurView 下面 */}
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tabBg }]} />
       <View style={[styles.barInner, { paddingBottom: insets.bottom }]}>
         <Pressable style={styles.item} onPress={onReview}>
           <ReviewIcon color={reviewActive ? colors.accent : colors.ink2} />
@@ -45,7 +45,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: colors.tabBg,
     borderTopWidth: 1,
     borderTopColor: colors.glassBorder,
   },

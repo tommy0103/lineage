@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert, Modal, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View,
+  Alert, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Rect } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
@@ -12,6 +11,7 @@ import * as Sharing from 'expo-sharing';
 import { colors, inkA } from '../theme';
 import { ticketDateCN, ticketParts, ticketSerial, Trip } from '../data';
 import { CloseIcon } from './icons';
+import { GlassBlur } from './Glass';
 
 type Skin = 'cr' | 'jr';
 
@@ -218,10 +218,11 @@ export default function TicketModal({ visible, trip, onClose }: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        {/* iOS 才叠真模糊；且 BlurView 要在无 padding 的层里（padding 会把 absoluteFill 内缩） */}
-        {Platform.OS === 'ios' ? (
-          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
-        ) : null}
+        {/* 模糊层统一走 GlassBlur（内部已配 blurMethod + blurTarget）；
+            要在无 padding 的层里（padding 会把 absoluteFill 内缩） */}
+        <GlassBlur intensity={30} tint="dark" />
+        {/* 压暗色盖在模糊之上（backdrop-filter 语义），不要垫在 BlurView 下面 */}
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: inkA(0.38) }]} />
         <View style={styles.overlayInner}>
           <View style={styles.modal}>
           <View style={styles.head}>
@@ -267,7 +268,6 @@ export default function TicketModal({ visible, trip, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: inkA(0.38),
   },
   overlayInner: {
     flex: 1,
