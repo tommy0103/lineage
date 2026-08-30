@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert, Image, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View,
+  ActivityIndicator, Alert, Image, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View,
 } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useFonts } from 'expo-font';
 // expo-media-library 的原生模块不在 Expo Go（Android）里，只能在使用处懒加载，
 // 静态 import 会让整个 bundle 在加载期崩溃。
@@ -15,6 +16,7 @@ import {
 } from '../data';
 import { CloseIcon } from './icons';
 import { GlassBlur } from './Glass';
+import { renderCrTicket } from './CrTicketSkia';
 
 type Skin = 'cr' | 'jr';
 
@@ -311,15 +313,51 @@ export default function TicketModal({ visible, trip, onClose }: Props) {
   // 票面宽度：modal 宽（屏宽 - 22*2 边距）- 16*2 padding
   const ticketW = winW - 22 * 2 - 16 * 2;
 
+  // Skia 渲染的 CR 蓝票 PNG（data URI）；JR 票面仍走 View + captureRef
+  const [crUri, setCrUri] = useState<string | null>(null);
+  const [rendering, setRendering] = useState(false);
+
   useEffect(() => {
     if (visible) setSkin('cr'); // mock: 打开时重置回中国铁路蓝票
   }, [visible]);
+
+  // CR 蓝票：trip 或可见性变化时用 Skia Canvas 渲染 PNG
+  useEffect(() => {
+    if (!visible || skin !== 'cr' || !trip) return;
+    let cancelled = false;
+    setRendering(true);
+    renderCrTicket(trip, 2)
+      .then(({ base64 }) => {
+        if (!cancelled) setCrUri(`data:image/png;base64,${base64}`);
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setCrUri(null);
+          console.warn('CrTicket render failed:', e);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setRendering(false);
+      });
+    return () => { cancelled = true; };
+  }, [visible, skin, trip]);
 
   const onSave = async () => {
     if (!trip || saving) return;
     setSaving(true);
     try {
-      const uri = await captureRef(ticketRef, { format: 'png', quality: 1 });
+      let uri: string;
+      if (skin === 'cr' && crUri) {
+        // Skia 已渲染好 PNG → 写临时文件
+        const base64 = crUri.split(',')[1];
+        uri = `${FileSystem.cacheDirectory}ticket_${Date.now()}.png`;
+        await FileSystem.writeAsStringAsync(uri, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+      } else {
+        // JR 票面：view-shot 截图
+        uri = await captureRef(ticketRef, { format: 'png', quality: 1 });
+      }
       if (await saveToAlbum(uri)) {
         Alert.alert('已保存', '车票 PNG 已存进相册');
       } else if (await Sharing.isAvailableAsync()) {
@@ -362,7 +400,27 @@ export default function TicketModal({ visible, trip, onClose }: Props) {
               </Pressable>
             ))}
           </View>
-          {trip && (
+          {trip && skin === 'cr' && (
+            <View collapsable={false} ref={ticketRef} style={styles.ticketWrap}>
+              {rendering ? (
+                <View style={[styles.ticketLoading, { width: ticketW, height: ticketW * (539 / 876) }]}>
+                  <ActivityIndicator color={colors.ink2} />
+                  <Text style={styles.ticketLoadingText}>渲染中…</Text>
+                </View>
+              ) : crUri ? (
+                <Image
+                  source={{ uri: crUri }}
+                  style={{ width: ticketW, height: ticketW * (539 / 876), borderRadius: 8 }}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={[styles.ticketLoading, { width: ticketW, height: ticketW * (539 / 876) }]}>
+                  <Text style={styles.ticketLoadingText}>渲染失败</Text>
+                </View>
+              )}
+            </View>
+          )}
+          {trip && skin === 'jr' && (
             <View collapsable={false} ref={ticketRef} style={styles.ticketWrap}>
               <TicketView trip={trip} skin={skin} width={ticketW} />
             </View>
@@ -438,4 +496,12 @@ const styles = StyleSheet.create({
     height: 36, marginTop: 6, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
   },
   btnGhostText: { fontSize: 13, color: colors.ink2 },
+  ticketLoading: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: inkA(0.04),
+    borderRadius: 8,
+  },
+  ticketLoadingText: { fontSize: 13, color: colors.ink2 },
 });
