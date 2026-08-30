@@ -2,12 +2,7 @@
 // 阈值：ROLES 里最大 cCap 是 waterText 的 0.08，故 C>0.09 即视为「高饱和残留」。
 // 同时确认：无 sprite 引用（icon-image / *-pattern）、无数据驱动颜色（["get","*color*"]）。
 // 运行：node scripts/scan-colors.mjs
-import { readFileSync } from 'node:fs';
-
-const src = readFileSync(new URL('../src/mapstyle.ts', import.meta.url), 'utf8');
-const json = src.match(/export const MAP_STYLE = (\{[\s\S]*\}) as const;/);
-if (!json) throw new Error('mapstyle.ts 结构不符');
-const style = JSON.parse(json[1]);
+const { MAP_STYLE: style } = await import('../src/mapstyle.ts');
 
 function srgbToOklch(r, g, b) {
   const lin = (x) => (x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4));
@@ -57,28 +52,31 @@ let iconRefs = 0;
 let patternRefs = 0;
 let dataDrivenColors = 0;
 
-function walk(v, layerId, path, muted = false) {
+function walk(v, layerId, path, muted = false, inMatch = false) {
   if (typeof v === 'string') {
     const c = parseColor(v);
-    if (c) hits.push({ layerId, path, value: v, ...c });
+    // match 子树里的颜色是 build-transit-colors 的策展色（饱和度上限 0.11，高于全局 0.09 是设计如此）
+    if (c && !inMatch) hits.push({ layerId, path, value: v, ...c });
     return;
   }
   if (Array.isArray(v)) {
     // 被 build-mapstyle.mjs 的 muteDataDrivenColor 包装（含 to-rgba）的数据驱动色是合法的：
-    // 运行时保色相压饱和。未包装的 ["get","*color*"] 才算残留。
+    // 运行时保色相压饱和。match 子树里的 ["get","official-color"] 由 TRANSIT_COLORS 离线
+    // 和谐化接管。未包装、未接管的 ["get","*color*"] 才算残留。
     if (v[0] === 'to-rgba') muted = true;
-    if (v[0] === 'get' && typeof v[1] === 'string' && /color/i.test(v[1]) && !muted) {
+    if (v[0] === 'match') inMatch = true;
+    if (v[0] === 'get' && typeof v[1] === 'string' && /color/i.test(v[1]) && !muted && !inMatch) {
       dataDrivenColors++;
       console.log(`💥 数据驱动颜色残留: ${layerId} ${path} → ["get","${v[1]}"]`);
     }
-    v.forEach((x, i) => walk(x, layerId, `${path}[${i}]`, muted));
+    v.forEach((x, i) => walk(x, layerId, `${path}[${i}]`, muted, inMatch));
     return;
   }
   if (v && typeof v === 'object') {
     for (const [k, x] of Object.entries(v)) {
       if (k === 'icon-image') iconRefs++;
       if (k.endsWith('-pattern')) patternRefs++;
-      walk(x, layerId, path ? `${path}.${k}` : k, muted);
+      walk(x, layerId, path ? `${path}.${k}` : k, muted, inMatch);
     }
   }
 }

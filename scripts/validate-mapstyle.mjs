@@ -8,10 +8,7 @@ import { readFileSync } from 'node:fs';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 
-const ts = readFileSync(new URL('../src/mapstyle.ts', import.meta.url), 'utf8');
-const style = JSON.parse(
-  ts.slice(ts.indexOf('export const MAP_STYLE = ') + 25).replace(/ as const;\s*$/, '')
-);
+const { MAP_STYLE: style } = await import('../src/mapstyle.ts');
 
 let failures = 0;
 const fail = (msg) => {

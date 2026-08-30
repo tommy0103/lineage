@@ -18,13 +18,20 @@ const style = JSON.parse(readFileSync(SRC, 'utf8'));
 // Bing 在当前 it/features 参数下从不下发 *_hd 瓦片（z0–z18 采样验证），hd 图层组是死重量。
 const INCLUDE_HD = false;
 
-// ============ theme 色板（OKLCH，与 src/theme.ts 对应） ============
+// ============ theme 色板（OKLCH）：来自 scripts/palette.mjs（chromatic 色阶生成），
+// 与 src/theme.ts 同源——改配色改 palette.mjs 后重跑本脚本与 build-palette.mjs ============
+import { paletteColors } from './palette.mjs';
+const PC = paletteColors();
+const oklchOf = (name) => {
+  const { l, c, h } = PC[name].oklch;
+  return { L: l, C: c, H: h };
+};
 const THEME = {
-  sea: { L: 0.93, C: 0.03, H: 205 },
-  land: { L: 0.96, C: 0.01, H: 160 },
-  landLine: { L: 0.86, C: 0.02, H: 175 },
-  ink2: { L: 0.4, C: 0.02, H: 240 },
-  pageBg: { L: 0.955, C: 0.015, H: 210 },
+  sea: oklchOf('sea'),
+  land: oklchOf('land'),
+  landLine: oklchOf('landLine'),
+  ink2: oklchOf('ink2'),
+  pageBg: oklchOf('pageBg'),
 };
 
 // ============ 角色调色参数（可调） ============
@@ -204,12 +211,20 @@ function recolor(value, role, key) {
 // ============ 数据驱动颜色 ============
 // 地铁线颜色是 ["case",["has","official-color"],["get","official-color"],"#BFB9BD"]：
 // 瓦片里每条线的官方色（大红大绿大紫）静态调色够不到，运行时才会取值。
-// 不一刀切替换成固定色（那样高速/高铁/地铁糊成一片）——用 MapLibre 表达式在运行时做
-// 「保色相压饱和 + 轻度提亮」：每个通道向灰度按 DD_DESAT 比例收拢（色相保留、线路可分），
-// 再向白色提亮 DD_LIFT（去掉暗色线的沉重感）。to-rgba/rgba/let/var/at 都是 style spec
-// 标准表达式，MapLibre Native 支持。
-const DD_DESAT = 0.42; // 0=纯灰 1=原色：保留色相的比例
-const DD_LIFT = 0.16; // 向白提亮的比例
+// 首选：build-transit-colors.mjs 离线提取 + culori 和谐化（保色相、亮度夹带、饱和度封顶）
+// 的 TRANSIT_COLORS 映射，生成 match 表达式——已收录的官方色直接换成晨雾基调的对应色，
+// 线路之间保持可区分。未收录的颜色兜底走运行时「保色相压饱和」表达式（muteDataDrivenColor）。
+const DD_DESAT = 0.42; // 0=纯灰 1=原色：保留色相的比例（兜底路径用）
+const DD_LIFT = 0.16; // 向白提亮的比例（兜底路径用）
+
+// 离线和谐化的官方色映射（不存在时退化为纯运行时压灰）
+let transitPairs = [];
+try {
+  const { TRANSIT_COLORS } = await import('../src/transit-colors.ts');
+  transitPairs = Object.entries(TRANSIT_COLORS).flat();
+} catch {
+  console.warn('src/transit-colors.ts 不存在，先跑 node scripts/build-transit-colors.mjs；本次退化为运行时压灰');
+}
 
 function hasDataDrivenColor(v) {
   if (!Array.isArray(v)) return false;
@@ -236,8 +251,20 @@ function muteDataDrivenColor(colorExpr) {
 function fixDataDrivenColors(paint, role) {
   for (const [k, v] of Object.entries(paint)) {
     if (!k.endsWith('-color') || !hasDataDrivenColor(v)) continue;
-    paint[k] = muteDataDrivenColor(v);
-    console.log(`  data-driven color → hue-preserving desat: ${k}`);
+    if (transitPairs.length) {
+      // 已收录官方色 → match 换成和谐色；未收录 → 运行时压灰；无 official-color → 原静态 fallback
+      const fallback = typeof v[v.length - 1] === 'string' ? v[v.length - 1] : '#969697';
+      paint[k] = [
+        'case',
+        ['has', 'official-color'],
+        ['match', ['downcase', ['get', 'official-color']], ...transitPairs, muteDataDrivenColor(['get', 'official-color'])],
+        fallback,
+      ];
+      console.log(`  data-driven color → transit match (${transitPairs.length / 2} 色) + runtime fallback: ${k}`);
+    } else {
+      paint[k] = muteDataDrivenColor(v);
+      console.log(`  data-driven color → runtime desat: ${k}`);
+    }
   }
 }
 

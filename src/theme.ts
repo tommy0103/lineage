@@ -1,17 +1,18 @@
-// 色板：由 home-v1-morning-glass.html 的 :root oklch 值经 scripts/oklch.mjs 精确换算。
+// 本文件由 scripts/build-palette.mjs 生成，请勿手改（配色改 scripts/palette.mjs）。
+// 色阶来自 @proj-airi/chromatic（OKLCH 色阶生成器），晨雾基调 = 各色相饱和度 30%，accent 65%。
 export const colors = {
-  sea: '#d2eef1', // oklch(93% 0.03 205) 屏幕底色
-  land: '#ecf4ef', // oklch(96% 0.01 160)
-  landLine: '#c4d6d0', // oklch(86% 0.02 175)
-  ink: '#19232a', // oklch(25% 0.02 240)
-  ink2: '#3e4952', // oklch(40% 0.02 240)
-  ink38: '#39444c', // oklch(38% 0.02 240) 轨道端点 / 座席
-  ink35: '#313c44', // oklch(35% 0.02 240) 票价
-  ink28: '#202a32', // oklch(28% 0.02 240) pill.on
-  accent: '#009c96', // oklch(62% 0.12 190)
-  accentHover: '#008d87', // oklch(57% 0.12 190)
-  dotOff: '#6f757a', // oklch(56% 0.01 240)
-  pageBg: '#e5f3f6', // oklch(95.5% 0.015 210)
+  sea: '#e5f5fb', // 水系 / 屏幕底色
+  land: '#f8fbf9', // 陆地
+  landLine: '#bdd5c7', // 陆地边界
+  ink: '#202d36', // 主文字
+  ink2: '#44657c', // 次级文字
+  ink38: '#44657c', // 轨道端点 / 座席
+  ink35: '#385061', // 票价
+  ink28: '#2f4250', // pill.on
+  accent: '#009c96',
+  accentHover: '#008680',
+  dotOff: '#94afc2', // 未点亮城市点
+  pageBg: '#f7fbfc',
   // 玻璃盖板透明度：低于 mock 的 0.72——真模糊生效后，盖板越淡越能看出背后的模糊内容，
   // 0.72 会把模糊盖成白板（晨雾基调下地图本身就近白）。
   glass: 'rgba(255, 255, 255, 0.45)',
@@ -20,10 +21,10 @@ export const colors = {
 };
 
 // ink 加透明度的常用色
-export const inkA = (a: number) => `rgba(25, 35, 42, ${a})`;
+export const inkA = (a: number) => `rgba(32, 45, 54, ${a})`;
 
 export const glassShadow = {
-  shadowColor: '#19232a',
+  shadowColor: '#202d36',
   shadowOpacity: 0.1,
   shadowRadius: 28,
   shadowOffset: { width: 0, height: 8 },

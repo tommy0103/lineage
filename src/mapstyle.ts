@@ -62,7 +62,7 @@ export const MAP_STYLE = {
       "id": "microsoft.bing.maps.base.land",
       "type": "background",
       "paint": {
-        "background-color": "#e5f3f6"
+        "background-color": "#f7fbfc"
       }
     },
     {
@@ -178,11 +178,11 @@ export const MAP_STYLE = {
             "zoom"
           ],
           0,
-          "#d2f2df",
+          "#d1f2df",
           11,
-          "#d2f2df",
+          "#d1f2df",
           13,
-          "#d9f0e3",
+          "#d9f1e3",
           15,
           "#e7edea"
         ]
@@ -204,7 +204,7 @@ export const MAP_STYLE = {
       "source-layer": "reserve",
       "type": "fill",
       "paint": {
-        "fill-color": "#d2f2df"
+        "fill-color": "#d1f2df"
       }
     },
     {
@@ -261,7 +261,7 @@ export const MAP_STYLE = {
       "minzoom": 14,
       "type": "fill",
       "paint": {
-        "fill-color": "#d2f2df"
+        "fill-color": "#d1f2df"
       }
     },
     {
@@ -306,7 +306,7 @@ export const MAP_STYLE = {
       "minzoom": 7,
       "type": "fill",
       "paint": {
-        "fill-color": "#e2e7e6"
+        "fill-color": "#e3e7e4"
       }
     },
     {
@@ -467,7 +467,7 @@ export const MAP_STYLE = {
         "line-cap": "round"
       },
       "paint": {
-        "line-color": "#dbe6e200",
+        "line-color": "#dce6e000",
         "line-width": 1
       }
     },
@@ -490,7 +490,7 @@ export const MAP_STYLE = {
         ]
       ],
       "paint": {
-        "fill-color": "#ccf5fa"
+        "fill-color": "#cef3ff"
       }
     },
     {
@@ -516,7 +516,7 @@ export const MAP_STYLE = {
         "line-cap": "round"
       },
       "paint": {
-        "line-color": "#ccf5fa",
+        "line-color": "#cef3ff",
         "line-width": [
           "interpolate",
           [
@@ -652,7 +652,7 @@ export const MAP_STYLE = {
         ]
       ],
       "paint": {
-        "line-color": "#ccf5fa",
+        "line-color": "#cef3ff",
         "line-width": [
           "interpolate",
           [
@@ -745,7 +745,7 @@ export const MAP_STYLE = {
       "minzoom": 16,
       "type": "fill",
       "paint": {
-        "fill-color": "#e2e7e6"
+        "fill-color": "#e3e7e4"
       }
     },
     {
@@ -771,7 +771,7 @@ export const MAP_STYLE = {
         "line-cap": "round"
       },
       "paint": {
-        "line-color": "#e2e7e6",
+        "line-color": "#e3e7e4",
         "line-width": 1
       }
     },
@@ -2009,7 +2009,7 @@ export const MAP_STYLE = {
       "minzoom": 12,
       "type": "line",
       "paint": {
-        "line-color": "#71aab1",
+        "line-color": "#75a8ba",
         "line-width": 1.25,
         "line-dasharray": [
           "step",
@@ -2058,11 +2058,11 @@ export const MAP_STYLE = {
             "zoom"
           ],
           0,
-          "#75aeb5",
+          "#79acbe",
           9,
-          "#73acb3",
+          "#77aabc",
           12,
-          "#71aab1"
+          "#75a8ba"
         ],
         "line-width": [
           "interpolate",
@@ -3793,106 +3793,344 @@ export const MAP_STYLE = {
       },
       "paint": {
         "line-color": [
-          "let",
-          "rgb",
+          "case",
           [
-            "to-rgba",
+            "has",
+            "official-color"
+          ],
+          [
+            "match",
             [
-              "case",
-              [
-                "has",
-                "official-color"
-              ],
+              "downcase",
               [
                 "get",
                 "official-color"
-              ],
-              "#9fa0a1"
-            ]
-          ],
-          [
-            "let",
-            "gray",
-            [
-              "+",
-              [
-                "*",
-                0.2126,
-                [
-                  "at",
-                  0,
-                  [
-                    "var",
-                    "rgb"
-                  ]
-                ]
-              ],
-              [
-                "*",
-                0.7152,
-                [
-                  "at",
-                  1,
-                  [
-                    "var",
-                    "rgb"
-                  ]
-                ]
-              ],
-              [
-                "*",
-                0.0722,
-                [
-                  "at",
-                  2,
-                  [
-                    "var",
-                    "rgb"
-                  ]
-                ]
               ]
             ],
+            "#005389",
+            "#3579b2",
+            "#005fb3",
+            "#3d76b9",
+            "#006098",
+            "#2b7ab4",
+            "#00763d",
+            "#2e8851",
+            "#007b42",
+            "#2c8853",
+            "#008187",
+            "#0b848a",
+            "#008337",
+            "#38874c",
+            "#008536",
+            "#39874b",
+            "#008e9c",
+            "#008e9c",
+            "#008fa5",
+            "#008fa5",
+            "#00954d",
+            "#399058",
+            "#009a42",
+            "#459357",
+            "#009b6b",
+            "#27996d",
+            "#009bc1",
+            "#009bc1",
+            "#00a9a9",
+            "#00a9a9",
+            "#00ab4f",
+            "#52a367",
+            "#00c5ff",
+            "#3fb3e0",
+            "#00ca6a",
+            "#65ba7f",
+            "#00d0bc",
+            "#2abdab",
+            "#017960",
+            "#20876d",
+            "#019fde",
+            "#399ed3",
+            "#0269a4",
+            "#267ab5",
+            "#049753",
+            "#38935c",
+            "#059bd8",
+            "#349acf",
+            "#073765",
+            "#4a77aa",
+            "#084aa5",
+            "#4774ba",
+            "#0fa643",
+            "#529e5f",
+            "#164398",
+            "#4c73ba",
+            "#17cbe2",
+            "#1cb9cd",
+            "#1b75ce",
+            "#3c77b9",
+            "#1e676d",
+            "#3b8187",
+            "#259cbd",
+            "#259cbd",
+            "#274ee9",
+            "#5371bb",
+            "#28aca8",
+            "#28aca8",
+            "#2a3964",
+            "#6173a3",
+            "#2b9346",
+            "#438f52",
+            "#2ec6d6",
+            "#18b9c9",
+            "#41b6e6",
+            "#42b2e1",
+            "#435428",
+            "#6a7c4f",
+            "#4378b4",
+            "#4378b4",
+            "#47c1cc",
+            "#3cb8c3",
+            "#52b33e",
+            "#6fac63",
+            "#530e79",
+            "#895faa",
+            "#541384",
+            "#8561ad",
+            "#54c43c",
+            "#7ab76e",
+            "#59178a",
+            "#8560ac",
+            "#616020",
+            "#79783a",
+            "#63b9e9",
+            "#59afdf",
+            "#69173d",
+            "#aa5375",
+            "#6bc4d6",
+            "#5ab3c5",
+            "#6e3d96",
+            "#8760ab",
+            "#7389b2",
+            "#7389b2",
+            "#741d50",
+            "#a75480",
+            "#796cb1",
+            "#796cb1",
+            "#7cc921",
+            "#88b463",
+            "#810081",
+            "#9a5997",
+            "#811c2b",
+            "#b05459",
+            "#82b82e",
+            "#8db35f",
+            "#86656d",
+            "#8b6a72",
+            "#87179d",
+            "#935ba0",
+            "#892726",
+            "#b0554f",
+            "#8ec921",
+            "#8eb35e",
+            "#914798",
+            "#965a9c",
+            "#91c5db",
+            "#7aadc3",
+            "#98acab",
+            "#95a9a8",
+            "#9c3e78",
+            "#a55584",
+            "#9fce66",
+            "#8db35f",
+            "#a09200",
+            "#9e922c",
+            "#a6217f",
+            "#a45587",
+            "#a77bca",
+            "#a67cc9",
+            "#a90040",
+            "#af5363",
+            "#a9cc10",
+            "#99b056",
+            "#b18854",
+            "#b18854",
+            "#b2a225",
+            "#b0a23f",
+            "#b34e20",
+            "#ae5a37",
+            "#b38112",
+            "#b18223",
+            "#b8d406",
+            "#9daf53",
+            "#bd5f54",
+            "#bc6055",
+            "#c23a30",
+            "#b0564b",
+            "#c45b03",
+            "#b66636",
+            "#c4984e",
+            "#c4984e",
+            "#c52001",
+            "#b05646",
+            "#c6afd4",
+            "#b19bbf",
+            "#c8123b",
+            "#b05459",
+            "#cd0065",
+            "#ac536e",
+            "#ce4318",
+            "#b45d44",
+            "#d07b18",
+            "#c6803c",
+            "#d19447",
+            "#d19447",
+            "#d5a7a1",
+            "#c59892",
+            "#d70306",
+            "#b0564a",
+            "#d7271a",
+            "#b2584b",
+            "#da0b17",
+            "#b0564c",
+            "#daf072",
+            "#9eaf52",
+            "#db241c",
+            "#b45a4e",
+            "#df7a06",
+            "#cf8447",
+            "#dfab1a",
+            "#c69f41",
+            "#e1424a",
+            "#c16462",
+            "#e2d901",
+            "#aea947",
+            "#e3718f",
+            "#d87a91",
+            "#e40077",
+            "#b75d7b",
+            "#e61925",
+            "#ba5e56",
+            "#e61a11",
+            "#b95e52",
+            "#e67016",
+            "#d17f4e",
+            "#e8cc60",
+            "#bca341",
+            "#e90208",
+            "#b95e52",
+            "#e93cac",
+            "#c26f9e",
+            "#e97216",
+            "#d38150",
+            "#e999c0",
+            "#d788af",
+            "#e99cc0",
+            "#d58aad",
+            "#eab011",
+            "#c89e41",
+            "#eb6183",
+            "#d57689",
+            "#ebcd31",
+            "#b9a542",
+            "#ec333f",
+            "#c36662",
+            "#ec7823",
+            "#d78654",
+            "#ed1e3c",
+            "#bf6261",
+            "#ee782e",
+            "#da8658",
+            "#efab03",
+            "#cc9b42",
+            "#f0b200",
+            "#c99d41",
+            "#f3d100",
+            "#baa542",
+            "#f57b61",
+            "#e58772",
+            "#f5964a",
+            "#dd9055",
+            "#f6c582",
+            "#ca9b59",
+            "#f7b000",
+            "#cc9b43",
+            "#f8d032",
+            "#bea341",
+            "#fa709c",
+            "#e2839e",
+            "#fc0601",
+            "#c5695c",
+            "#fcb14d",
+            "#d49748",
+            "#ff0000",
+            "#c76a5d",
+            "#ffaa00",
+            "#d29846",
+            "#ffd823",
+            "#bca341",
+            "#ffe637",
+            "#b5a644",
             [
-              "rgba",
+              "let",
+              "rgb",
               [
-                "max",
-                0,
+                "to-rgba",
                 [
-                  "min",
-                  255,
+                  "get",
+                  "official-color"
+                ]
+              ],
+              [
+                "let",
+                "gray",
+                [
+                  "+",
                   [
-                    "+",
+                    "*",
+                    0.2126,
                     [
-                      "+",
+                      "at",
+                      0,
                       [
                         "var",
-                        "gray"
-                      ],
-                      [
-                        "*",
-                        0.42,
-                        [
-                          "-",
-                          [
-                            "at",
-                            0,
-                            [
-                              "var",
-                              "rgb"
-                            ]
-                          ],
-                          [
-                            "var",
-                            "gray"
-                          ]
-                        ]
+                        "rgb"
                       ]
-                    ],
+                    ]
+                  ],
+                  [
+                    "*",
+                    0.7152,
                     [
-                      "*",
+                      "at",
+                      1,
                       [
-                        "-",
-                        255,
+                        "var",
+                        "rgb"
+                      ]
+                    ]
+                  ],
+                  [
+                    "*",
+                    0.0722,
+                    [
+                      "at",
+                      2,
+                      [
+                        "var",
+                        "rgb"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "rgba",
+                  [
+                    "max",
+                    0,
+                    [
+                      "min",
+                      255,
+                      [
+                        "+",
                         [
                           "+",
                           [
@@ -3918,52 +4156,52 @@ export const MAP_STYLE = {
                               ]
                             ]
                           ]
-                        ]
-                      ],
-                      0.16
-                    ]
-                  ]
-                ]
-              ],
-              [
-                "max",
-                0,
-                [
-                  "min",
-                  255,
-                  [
-                    "+",
-                    [
-                      "+",
-                      [
-                        "var",
-                        "gray"
-                      ],
-                      [
-                        "*",
-                        0.42,
+                        ],
                         [
-                          "-",
+                          "*",
                           [
-                            "at",
-                            1,
+                            "-",
+                            255,
                             [
-                              "var",
-                              "rgb"
+                              "+",
+                              [
+                                "var",
+                                "gray"
+                              ],
+                              [
+                                "*",
+                                0.42,
+                                [
+                                  "-",
+                                  [
+                                    "at",
+                                    0,
+                                    [
+                                      "var",
+                                      "rgb"
+                                    ]
+                                  ],
+                                  [
+                                    "var",
+                                    "gray"
+                                  ]
+                                ]
+                              ]
                             ]
                           ],
-                          [
-                            "var",
-                            "gray"
-                          ]
+                          0.16
                         ]
                       ]
-                    ],
+                    ]
+                  ],
+                  [
+                    "max",
+                    0,
                     [
-                      "*",
+                      "min",
+                      255,
                       [
-                        "-",
-                        255,
+                        "+",
                         [
                           "+",
                           [
@@ -3989,52 +4227,52 @@ export const MAP_STYLE = {
                               ]
                             ]
                           ]
-                        ]
-                      ],
-                      0.16
-                    ]
-                  ]
-                ]
-              ],
-              [
-                "max",
-                0,
-                [
-                  "min",
-                  255,
-                  [
-                    "+",
-                    [
-                      "+",
-                      [
-                        "var",
-                        "gray"
-                      ],
-                      [
-                        "*",
-                        0.42,
+                        ],
                         [
-                          "-",
+                          "*",
                           [
-                            "at",
-                            2,
+                            "-",
+                            255,
                             [
-                              "var",
-                              "rgb"
+                              "+",
+                              [
+                                "var",
+                                "gray"
+                              ],
+                              [
+                                "*",
+                                0.42,
+                                [
+                                  "-",
+                                  [
+                                    "at",
+                                    1,
+                                    [
+                                      "var",
+                                      "rgb"
+                                    ]
+                                  ],
+                                  [
+                                    "var",
+                                    "gray"
+                                  ]
+                                ]
+                              ]
                             ]
                           ],
-                          [
-                            "var",
-                            "gray"
-                          ]
+                          0.16
                         ]
                       ]
-                    ],
+                    ]
+                  ],
+                  [
+                    "max",
+                    0,
                     [
-                      "*",
+                      "min",
+                      255,
                       [
-                        "-",
-                        255,
+                        "+",
                         [
                           "+",
                           [
@@ -4060,23 +4298,57 @@ export const MAP_STYLE = {
                               ]
                             ]
                           ]
+                        ],
+                        [
+                          "*",
+                          [
+                            "-",
+                            255,
+                            [
+                              "+",
+                              [
+                                "var",
+                                "gray"
+                              ],
+                              [
+                                "*",
+                                0.42,
+                                [
+                                  "-",
+                                  [
+                                    "at",
+                                    2,
+                                    [
+                                      "var",
+                                      "rgb"
+                                    ]
+                                  ],
+                                  [
+                                    "var",
+                                    "gray"
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          0.16
                         ]
-                      ],
-                      0.16
+                      ]
+                    ]
+                  ],
+                  [
+                    "at",
+                    3,
+                    [
+                      "var",
+                      "rgb"
                     ]
                   ]
                 ]
-              ],
-              [
-                "at",
-                3,
-                [
-                  "var",
-                  "rgb"
-                ]
               ]
             ]
-          ]
+          ],
+          "#9fa0a1"
         ],
         "line-width": [
           "interpolate",
@@ -4156,9 +4428,9 @@ export const MAP_STYLE = {
             "zoom"
           ],
           1,
-          "#92a9a2cc",
+          "#95a89dcc",
           2,
-          "#92a9a2"
+          "#95a99d"
         ],
         "line-width": [
           "step",
@@ -4240,7 +4512,7 @@ export const MAP_STYLE = {
       "maxzoom": 9,
       "type": "line",
       "paint": {
-        "line-color": "#92a9a2",
+        "line-color": "#95a99d",
         "line-width": [
           "step",
           [
@@ -4321,7 +4593,7 @@ export const MAP_STYLE = {
       "maxzoom": 4,
       "type": "line",
       "paint": {
-        "line-color": "#92a9a2",
+        "line-color": "#95a99d",
         "line-width": [
           "step",
           [
@@ -4402,7 +4674,7 @@ export const MAP_STYLE = {
       "maxzoom": 5,
       "type": "line",
       "paint": {
-        "line-color": "#92a9a2",
+        "line-color": "#95a99d",
         "line-width": [
           "step",
           [
@@ -4483,7 +4755,7 @@ export const MAP_STYLE = {
       "maxzoom": 7,
       "type": "line",
       "paint": {
-        "line-color": "#92a9a2",
+        "line-color": "#95a99d",
         "line-width": [
           "step",
           [
@@ -4564,7 +4836,7 @@ export const MAP_STYLE = {
       "maxzoom": 6,
       "type": "line",
       "paint": {
-        "line-color": "#92a9a2",
+        "line-color": "#95a99d",
         "line-width": [
           "step",
           [
@@ -4645,7 +4917,7 @@ export const MAP_STYLE = {
       "maxzoom": 3,
       "type": "line",
       "paint": {
-        "line-color": "#92a9a2",
+        "line-color": "#95a99d",
         "line-width": [
           "step",
           [
@@ -4729,7 +5001,7 @@ export const MAP_STYLE = {
         "line-cap": "round"
       },
       "paint": {
-        "line-color": "#92a9a2",
+        "line-color": "#95a99d",
         "line-width": [
           "step",
           [
@@ -4760,7 +5032,7 @@ export const MAP_STYLE = {
         "line-cap": "round"
       },
       "paint": {
-        "line-color": "#92a9a2",
+        "line-color": "#95a99d",
         "line-width": [
           "step",
           [
@@ -4788,7 +5060,7 @@ export const MAP_STYLE = {
       "maxzoom": 6,
       "type": "line",
       "paint": {
-        "line-color": "#98bab0cc",
+        "line-color": "#9cbaa9cc",
         "line-width": [
           "interpolate",
           [
@@ -4903,7 +5175,7 @@ export const MAP_STYLE = {
       "maxzoom": 6,
       "type": "line",
       "paint": {
-        "line-color": "#98bab0cc",
+        "line-color": "#9cbaa9cc",
         "line-width": [
           "interpolate",
           [
@@ -5248,7 +5520,7 @@ export const MAP_STYLE = {
         "line-cap": "round"
       },
       "paint": {
-        "line-color": "#accfc580",
+        "line-color": "#b1cfbe80",
         "line-width": 1
       }
     },
@@ -5270,7 +5542,7 @@ export const MAP_STYLE = {
         "line-cap": "round"
       },
       "paint": {
-        "line-color": "#bec6c4ba",
+        "line-color": "#bfc6c2ba",
         "line-width": [
           "interpolate",
           [
@@ -5304,7 +5576,7 @@ export const MAP_STYLE = {
         "line-cap": "round"
       },
       "paint": {
-        "line-color": "#92a9a2",
+        "line-color": "#95a99d",
         "line-width": [
           "step",
           [
@@ -5335,7 +5607,7 @@ export const MAP_STYLE = {
         "line-cap": "round"
       },
       "paint": {
-        "line-color": "#92a9a2",
+        "line-color": "#95a99d",
         "line-width": [
           "step",
           [
@@ -5375,8 +5647,8 @@ export const MAP_STYLE = {
             "bkt"
           ],
           494,
-          "#cbeae126",
-          "#cbeae1"
+          "#cfeada26",
+          "#cfeada"
         ],
         "fill-outline-color": "#cecece00"
       }
@@ -5406,9 +5678,9 @@ export const MAP_STYLE = {
             "zoom"
           ],
           12,
-          "#cbeae0",
+          "#cfe9da",
           14,
-          "#cfebe2"
+          "#d3eadc"
         ]
       }
     },
@@ -5433,9 +5705,9 @@ export const MAP_STYLE = {
           [
             "zoom"
           ],
-          "#cbeae1e6",
+          "#cfeadae6",
           16,
-          "#cbeae1b3"
+          "#cfeadab3"
         ]
       }
     },
@@ -5466,7 +5738,7 @@ export const MAP_STYLE = {
         "text-padding": 0
       },
       "paint": {
-        "text-color": "#357177"
+        "text-color": "#3a6e80"
       }
     },
     {
@@ -5580,7 +5852,7 @@ export const MAP_STYLE = {
         ]
       },
       "paint": {
-        "text-color": "#357177"
+        "text-color": "#3a6e80"
       }
     },
     {
@@ -5681,7 +5953,7 @@ export const MAP_STYLE = {
         ]
       },
       "paint": {
-        "text-color": "#357177"
+        "text-color": "#3a6e80"
       }
     },
     {
@@ -5859,7 +6131,7 @@ export const MAP_STYLE = {
         ]
       },
       "paint": {
-        "text-color": "#357177",
+        "text-color": "#3a6e80",
         "text-halo-width": 1,
         "text-halo-color": "#fffefd"
       }
@@ -5925,7 +6197,7 @@ export const MAP_STYLE = {
         ]
       },
       "paint": {
-        "text-color": "#357177"
+        "text-color": "#3a6e80"
       }
     },
     {
@@ -5990,7 +6262,7 @@ export const MAP_STYLE = {
         ]
       },
       "paint": {
-        "text-color": "#357177"
+        "text-color": "#3a6e80"
       }
     },
     {
@@ -6937,7 +7209,7 @@ export const MAP_STYLE = {
         "text-padding": 0
       },
       "paint": {
-        "text-color": "#357177"
+        "text-color": "#3a6e80"
       }
     },
     {
@@ -7619,7 +7891,7 @@ export const MAP_STYLE = {
         "text-padding": 0
       },
       "paint": {
-        "text-color": "#357177"
+        "text-color": "#3a6e80"
       }
     },
     {
