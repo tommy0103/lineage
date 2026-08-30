@@ -22,7 +22,7 @@ function Screen() {
   const [pane, setPane] = useState<Pane>('home');
   const [lastPane, setLastPane] = useState<Pane>('home');
   const [selectedCity, setSelectedCity] = useState<CityId>('hangzhou');
-  const [cardVisible, setCardVisible] = useState(true); // mock 初始城市卡可见（杭州）
+  const [cardVisible, setCardVisible] = useState(false); // 城市卡只在点选城市后出现（mock 默认显示杭州是演示残留）
   const [cityListReturn, setCityListReturn] = useState<'home' | 'review'>('home');
   const [cityList, setCityList] = useState<CityListData>({ title: '', sub: '', trips: [] });
   const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
@@ -155,7 +155,7 @@ function Screen() {
     <View style={styles.screen}>
       <StatusBar style="dark" />
       <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
-        <MapView width={winW} height={winH} selected={selectedCity} pulseKey={pulseKey} tripRoute={tripRoute} onCityPress={selectCity} cardAnchor={cardAnchor} />
+        <MapView width={winW} height={winH} selected={cardVisible ? selectedCity : null} pulseKey={pulseKey} tripRoute={tripRoute} onCityPress={selectCity} cardAnchor={cardAnchor} />
       </BlurTargetView>
 
       {/* 搜索胶囊（车次反查入口，mock 中无点击行为） */}

@@ -7,12 +7,19 @@ import {
   Camera,
   GeoJSONSource,
   Layer,
+  LogManager,
   Map,
+  type CameraRef,
   type MapRef,
   type PressEventWithFeatures,
   type StyleSpecification,
   type ViewStateChangeEvent,
 } from '@maplibre/maplibre-react-native';
+
+// ParseTile 越界是 Bing z5 国界瓦片的数据问题（scripts/scan-tile-bounds.mjs 有完整诊断）。
+// 缩放加载瓦片时这类 error 逐条过 bridge 打 console.error，dev 下加剧掉帧——在此吞咽，
+// 其余日志照常（返回 true = 跳过默认 console 输出）。
+LogManager.onLog(({ message }) => message.includes('Could not get geometries'));
 import type { LineLayerSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { colors } from '../theme';
 import { buildMapStyle } from '../mapstyle';
@@ -41,6 +48,15 @@ const fc = (features: GeoJSON.Feature[]): GeoJSON.FeatureCollection => ({
   type: 'FeatureCollection',
   features,
 });
+
+// 线形的经纬度包围盒
+function bboxOf(coords: [number, number][]): [number, number, number, number] {
+  let w = Infinity, s = Infinity, e = -Infinity, n = -Infinity;
+  for (const [lng, lat] of coords) {
+    w = Math.min(w, lng); s = Math.min(s, lat); e = Math.max(e, lng); n = Math.max(n, lat);
+  }
+  return [w, s, e, n];
+}
 
 // 点亮城市 = 可交互三城 + 其余 10 城（name 用于城市名标注）
 const LIT_FC = fc([
@@ -82,7 +98,7 @@ export interface CardAnchor {
 interface Props {
   width: number;
   height: number;
-  selected: CityId;
+  selected: CityId | null; // null = 未点选（初始态），不显示选中光晕也不锚定卡片
   pulseKey: number; // 递增即重放导入动画
   tripRoute: [number, number][] | null; // 当前 trip 详情的发到站线形（GCJ-02），null 不显示
   onCityPress: (id: CityId) => void;
@@ -98,9 +114,14 @@ export default function RealMap({ width, height, selected, pulseKey, tripRoute, 
   // 导入线形渐进绘制进度 0..1；null = 未在播（源给空集合）
   const [importFrac, setImportFrac] = useState<number | null>(null);
 
-  const selFC = useMemo(() => fc([pt(MAP_HUBS[selected])]), [selected]);
-  // 选中行程的静态高亮线形（已加入档案，不动效）
-  const tripRouteFC = useMemo(() => (tripRoute ? fc([line(tripRoute)]) : EMPTY_FC), [tripRoute]);
+  const selFC = useMemo(() => (selected ? fc([pt(MAP_HUBS[selected])]) : EMPTY_FC), [selected]);
+  // 选中行程的静态高亮线形（已加入档案，不动效）。
+  // routeVisible 控制显示时机：相机缩放到线路落定后才显示（聚焦动线，见下方相机编导）。
+  const [routeVisible, setRouteVisible] = useState(false);
+  const tripRouteFC = useMemo(
+    () => (tripRoute && routeVisible ? fc([line(tripRoute)]) : EMPTY_FC),
+    [tripRoute, routeVisible]
+  );
   // 导入动画：按进度截取真实线形的前缀
   const importRouteFC = useMemo(() => {
     if (importFrac == null || !IMPORT_ROUTE) return EMPTY_FC;
@@ -121,6 +142,44 @@ export default function RealMap({ width, height, selected, pulseKey, tripRoute, 
   // 的经纬度范围（iOS visibleCoordinateBounds / Android projection.visibleRegion），
   // 在墨卡托空间线性插值天然含 padding，且同步无桥接延迟。
   const viewBounds = useRef<[number, number, number, number] | null>(null);
+
+  // ---------- 相机编导：详情聚焦线路 / 退出恢复原视野 ----------
+  // 「我目前只想看这个」：进 trip 详情时相机动画缩放到刚好装下连线，落定后线才出现；
+  // 退出时动画回到进入前的视野。导入新车次同理（先缩放，再沿线渐进绘制）。
+  const cameraRef = useRef<CameraRef>(null);
+  const savedView = useRef<[number, number, number, number] | null>(null); // 进详情前的视野
+  const prevTripRoute = useRef<typeof tripRoute>(null);
+  const routeShowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 聚焦用的 padding：顶部避开搜索胶囊，底部给 sheet 留位（与初始视野同一套逻辑）
+  const focusPadding = { top: insets.top + 76, right: 24, bottom: Math.round(height * 0.4), left: 24 };
+
+  // 丝滑的关键：fly 缓动 + 充足时长（1300ms），线条在相机落定后再淡入（见 routeVisible）。
+  useEffect(() => {
+    const prev = prevTripRoute.current;
+    prevTripRoute.current = tripRoute;
+    if (routeShowTimer.current) clearTimeout(routeShowTimer.current);
+    if (tripRoute) {
+      if (!prev) savedView.current = viewBounds.current; // 只在「从非详情进入」时存视野（谱系跳转不覆盖）
+      setRouteVisible(false);
+      cameraRef.current?.fitBounds(bboxOf(tripRoute), {
+        padding: focusPadding,
+        duration: 1300,
+        easing: 'fly',
+      });
+      routeShowTimer.current = setTimeout(() => setRouteVisible(true), 1350); // 相机落定后显示线
+    } else if (prev) {
+      setRouteVisible(false);
+      if (savedView.current) {
+        cameraRef.current?.fitBounds(savedView.current, { duration: 1100, easing: 'fly' });
+        savedView.current = null;
+      }
+    }
+    return () => {
+      if (routeShowTimer.current) clearTimeout(routeShowTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripRoute]);
 
   // 把选中城市的屏幕坐标换算成卡片位置：默认卡片在点上方（箭头朝下），
   // 上方会盖住搜索胶囊则翻到点下方（箭头朝上，对应 mock 的 arrowTop），水平 clamp 留 12pt。
@@ -156,7 +215,7 @@ export default function RealMap({ width, height, selected, pulseKey, tripRoute, 
     (e: NativeSyntheticEvent<ViewStateChangeEvent>) => {
       const { bounds } = e.nativeEvent;
       viewBounds.current = bounds;
-      layoutFromBounds(bounds, selected);
+      if (selected) layoutFromBounds(bounds, selected);
       if (importAnimActive.current) {
         setHzPx(projectFromBounds(bounds, MAP_HUBS.hangzhou, width, height));
       }
@@ -168,6 +227,7 @@ export default function RealMap({ width, height, selected, pulseKey, tripRoute, 
   // 还没有 bounds 时（首帧 region 事件未发）用原生 project() 兜底——它同样含 padding；
   // 必须等 mapReady，否则样式未就位时 project 结果不可靠。
   useEffect(() => {
+    if (!selected) return;
     const b = viewBounds.current;
     if (b) {
       layoutFromBounds(b, selected);
@@ -181,6 +241,15 @@ export default function RealMap({ width, height, selected, pulseKey, tripRoute, 
   useEffect(() => {
     if (pulseKey === 0 || !mapReady) return;
     let cancelled = false;
+    // 聚焦动线（同 trip 详情）：先把相机动画缩放到刚好装下线路，落定后再开始绘制
+    if (IMPORT_ROUTE) {
+      cameraRef.current?.fitBounds(bboxOf(IMPORT_ROUTE), {
+        padding: focusPadding,
+        duration: 1300,
+        easing: 'fly',
+      });
+    }
+    const zoomSettleTimer = setTimeout(() => {
     // 投影杭州到屏幕坐标后播 RN 脉动环（对照 ChinaMap 的 pulse）；
     // 线形改为地图图层渐进绘制：沿真实沪杭线形按动画进度截取前缀 setData，
     // ~50ms 一帧、2.8s 画完（对照原 arc 时长）。图层在地理坐标系里，相机跟手天然解决。
@@ -213,12 +282,15 @@ export default function RealMap({ width, height, selected, pulseKey, tripRoute, 
         { iterations: 2 }
       ).start();
     });
+    }, 1350); // 等相机缩放落定再开始绘制
     return () => {
       cancelled = true;
+      clearTimeout(zoomSettleTimer);
       importAnimActive.current = false;
       if (importAnimTimer.current) clearTimeout(importAnimTimer.current);
       if (importDrawTimer.current) clearInterval(importDrawTimer.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pulseKey, mapReady, pulse]);
 
   const onHubPress = useCallback(
@@ -233,15 +305,19 @@ export default function RealMap({ width, height, selected, pulseKey, tripRoute, 
   const ringScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.4, 2.8] });
   const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] });
 
-  // 线路高亮两层样式：白色 casing 让它从底图跳出来，accent 主线宽度随缩放插值（z3≈2pt / z10≈4pt）
+  // 线路高亮两层样式：晨雾玻璃语言——不用白 casing 实线（太「导航地图」），
+  // 改成 mock 的连线语言：柔光晕（宽、低透明、边缘模糊）+ accent 细虚线（对照 mock arc-line）。
   const routeCasingPaint = {
-    'line-color': '#ffffff',
-    'line-width': ['interpolate', ['linear'], ['zoom'], 3, 5, 10, 8],
-    'line-opacity': 0.9,
+    'line-color': colors.accent,
+    'line-width': ['interpolate', ['linear'], ['zoom'], 3, 9, 10, 15],
+    'line-opacity': 0.13,
+    'line-blur': 3,
   } as GeoJSONLinePaint;
   const routeLinePaint = {
     'line-color': colors.accent,
-    'line-width': ['interpolate', ['linear'], ['zoom'], 3, 2, 10, 4],
+    'line-width': ['interpolate', ['linear'], ['zoom'], 3, 1.6, 10, 2.6],
+    'line-opacity': 0.85,
+    'line-dasharray': [2.5, 2], // 单位是线宽倍数：5pt 划 4pt 空（z3），随宽度自适应
   } as GeoJSONLinePaint;
   const routeLineLayout = { 'line-cap': 'round', 'line-join': 'round' } as GeoJSONLineLayout;
 
@@ -269,6 +345,7 @@ export default function RealMap({ width, height, selected, pulseKey, tripRoute, 
         {/* bounds 适配任意屏幕尺寸装下中国；padding 底部给 sheet 留位、顶部避开搜索胶囊。
             minZoom 取 1.5：留了底部 padding 后初始 fit 可能低到约 1.9，再大就把中国裁掉。 */}
         <Camera
+          ref={cameraRef}
           initialViewState={{
             bounds: MAP_BOUNDS,
             padding: { top: insets.top + 76, right: 12, bottom: Math.round(height * 0.4), left: 12 },
@@ -279,13 +356,13 @@ export default function RealMap({ width, height, selected, pulseKey, tripRoute, 
 
         {/* 选中行程的线路高亮（真实铁路线形，静态）：渲染在城市点之下 */}
         <GeoJSONSource id="trip-route" data={tripRouteFC}>
-          <Layer id="trip-route-casing" type="line" layout={routeLineLayout} paint={routeCasingPaint} />
+          <Layer id="trip-route-halo" type="line" layout={routeLineLayout} paint={routeCasingPaint} />
           <Layer id="trip-route-line" type="line" layout={routeLineLayout} paint={routeLinePaint} />
         </GeoJSONSource>
 
         {/* 导入动画：同一份真实线形按进度渐进绘制（「产生连接」） */}
         <GeoJSONSource id="import-route" data={importRouteFC}>
-          <Layer id="import-route-casing" type="line" layout={routeLineLayout} paint={routeCasingPaint} />
+          <Layer id="import-route-halo" type="line" layout={routeLineLayout} paint={routeCasingPaint} />
           <Layer id="import-route-line" type="line" layout={routeLineLayout} paint={routeLinePaint} />
         </GeoJSONSource>
 

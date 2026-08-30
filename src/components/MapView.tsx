@@ -10,7 +10,7 @@ import type { CardAnchor } from './RealMap';
 interface Props {
   width: number;
   height: number; // 仅真实地图使用；ChinaMap 按比例自算高度
-  selected: CityId;
+  selected: CityId | null; // null = 未点选（初始态）
   pulseKey: number;
   tripRoute: [number, number][] | null; // 仅真实地图使用；ChinaMap 降级路径跳过线路高亮
   onCityPress: (id: CityId) => void;

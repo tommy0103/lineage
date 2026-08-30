@@ -32,14 +32,14 @@ const LIT_DOTS: [number, number][] = [
 
 interface Props {
   width: number;
-  selected: CityId;
+  selected: CityId | null; // null = 未点选（初始态），不显示选中光晕
   pulseKey: number; // 递增即重放导入动画
   onCityPress: (id: CityId) => void;
 }
 
 export default function ChinaMap({ width, selected, pulseKey, onCityPress }: Props) {
   const height = (width * 270) / 170; // viewBox 150 10 170 270
-  const sel = CITIES[selected];
+  const sel = selected ? CITIES[selected] : null;
 
   const pulse = useRef(new Animated.Value(0)).current;
   const arc = useRef(new Animated.Value(0)).current;
@@ -99,9 +99,13 @@ export default function ChinaMap({ width, selected, pulseKey, onCityPress }: Pro
         ))}
       </G>
 
-      {/* 选中城市：光晕 + 加大点 */}
-      <Circle cx={sel.x} cy={sel.y} r={13} fill={colors.accent} opacity={0.22} />
-      <Circle cx={sel.x} cy={sel.y} r={4} fill={colors.accent} stroke="#fff" strokeWidth={1.4} />
+      {/* 选中城市：光晕 + 加大点（未点选时不显示） */}
+      {sel && (
+        <>
+          <Circle cx={sel.x} cy={sel.y} r={13} fill={colors.accent} opacity={0.22} />
+          <Circle cx={sel.x} cy={sel.y} r={4} fill={colors.accent} stroke="#fff" strokeWidth={1.4} />
+        </>
+      )}
 
       {/* 导入反馈：脉动环 + 区间线 */}
       <AnimatedCircle cx={hz.x} cy={hz.y} r={pulseR} fill={colors.accent}

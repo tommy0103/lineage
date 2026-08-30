@@ -203,3 +203,53 @@ export function ticketSerial(t: Trip): string {
   for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) % 9000000;
   return 'H' + String(1000000 + n).slice(-7);
 }
+
+// ---------------- 蓝票票面伪数据（纪念票占位，均非真实信息） ----------------
+
+function hashStr(s: string): number {
+  let n = 0;
+  for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) >>> 0;
+  return n;
+}
+
+// 站名拼音：蓝票票面连写风格（首字母大写、逐字连写，如 上海虹桥 → Shanghaihongqiao）
+const STATION_PINYIN: Record<string, string> = {
+  上海虹桥: 'Shanghaihongqiao',
+  杭州东: 'Hangzhoudong',
+  北京南: 'Beijingnan',
+  厦门北: 'Xiamenbei',
+};
+export function stationPinyin(name: string): string {
+  return STATION_PINYIN[name] || '';
+}
+
+// 检票口：mock 无此数据，由车次+发站 hash 出稳定伪值，如 "12A"
+export function ticketGate(t: Trip): string {
+  const h = hashStr(t.train + t.from);
+  return String((h % 24) + 1) + (h % 2 ? 'A' : 'B');
+}
+
+// 乘车人占位：mock 无真实乘客数据，身份证号与姓名均为版式占位
+export function ticketPassenger(t: Trip): { id: string; name: string } {
+  const h = hashStr(t.train + t.date + 'id');
+  return { id: '3301**********' + String(1000 + (h % 9000)), name: '乘车人' };
+}
+
+// 底部 JM 编码：{车站5位}{前缀2位}{窗口3位}{财收日期4位}{编码7位} JM
+// 全部由车次+日期+发站 hash 出的稳定伪值；财收日期按惯例取发车次日；
+// 编码7位沿用票号（字母+0+票号后5位），与真实票面「票号=编码后段」的对应关系一致。
+export function ticketJM(t: Trip): string {
+  const serial = ticketSerial(t);
+  const h = hashStr(t.from + t.train + t.date);
+  const station = String(10000 + (h % 90000));
+  const prefix = ['30', '31', '33', '00'][h % 4];
+  const window = String(1 + (h % 24)).padStart(3, '0');
+  let dateSuffix = '0101';
+  const m = t.dateLong.match(/(\d{4})\.(\d{2})\.(\d{2})/);
+  if (m) {
+    const d = new Date(+m[1], +m[2] - 1, +m[3] + 1); // 发车次日
+    dateSuffix = String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+  }
+  const code = serial[0] + '0' + serial.slice(-5);
+  return `${station}${prefix}${window}${dateSuffix}${code} JM`;
+}
