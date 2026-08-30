@@ -78,26 +78,36 @@ export const MAP_HUBS: Record<CityId, [number, number]> = {
   hangzhou: [120.2174, 30.2892],
 };
 
-// 其余 10 个点亮城市：厦门 / 苏州 / 南京 / 广州 / 深圳 / 武汉 / 成都 / 西安 / 青岛 / 长沙
-export const MAP_LIT: [number, number][] = [
-  [118.0944, 24.4772], // 厦门
-  [120.5895, 31.2967], // 苏州
-  [118.8021, 32.0582], // 南京
-  [113.2697, 23.1264], // 广州
-  [114.063, 22.5404], // 深圳
-  [114.3108, 30.5907], // 武汉
-  [104.069, 30.5698], // 成都
-  [108.9445, 34.34], // 西安
-  [120.3877, 36.0674], // 青岛
-  [112.9442, 28.2247], // 长沙
+// 其余 10 个点亮城市（name 用于地图上的城市名标注）
+export interface MapCity {
+  name: string;
+  coord: [number, number];
+}
+export const MAP_LIT: MapCity[] = [
+  { name: '厦门', coord: [118.0944, 24.4772] },
+  { name: '苏州', coord: [120.5895, 31.2967] },
+  { name: '南京', coord: [118.8021, 32.0582] },
+  { name: '广州', coord: [113.2697, 23.1264] },
+  { name: '深圳', coord: [114.063, 22.5404] },
+  { name: '武汉', coord: [114.3108, 30.5907] },
+  { name: '成都', coord: [104.069, 30.5698] },
+  { name: '西安', coord: [108.9445, 34.34] },
+  { name: '青岛', coord: [120.3877, 36.0674] },
+  { name: '长沙', coord: [112.9442, 28.2247] },
 ];
 
 // 3 个未访问城市：昆明 / 沈阳 / 郑州
-export const MAP_OFF: [number, number][] = [
-  [102.8343, 24.877], // 昆明
-  [123.4376, 41.8081], // 沈阳
-  [113.6314, 34.7454], // 郑州
+export const MAP_OFF: MapCity[] = [
+  { name: '昆明', coord: [102.8343, 24.877] },
+  { name: '沈阳', coord: [123.4376, 41.8081] },
+  { name: '郑州', coord: [113.6314, 34.7454] },
 ];
+
+// 当前已点亮城市的中文名：用于 buildMapStyle() 在运行时剔除 Bing 同名地名标注。
+// 今天从 mock 数据派生；接入真实数据库后改为从行程数据聚合即可，地图侧不用动。
+export function litCityNames(): string[] {
+  return [...Object.values(CITIES).map((c) => c.name), ...MAP_LIT.map((c) => c.name)];
+}
 
 // 初始相机视野（GCJ-02，与 Bing 中国版瓦片同坐标系）：[west, south, east, north]
 // 装下中国全境（含海南），由 Camera initialViewState 的 bounds 适配任意屏幕尺寸。

@@ -22,12 +22,16 @@ function lngLatToTile(lng, lat, z) {
   return [x, y];
 }
 
-// 采样点：中国中心 / 上海 / z2 全国（验证国界 bkt=434 起作用的级别）
+// 采样点：中国中心 / 上海 / z2 全国（验证国界 bkt=434 起作用的级别）/ z10+ 长三角（验证 road/admin_division1/populated_place）
 const SAMPLES = [
   ['z2 全国偏西(90,40)', 2, ...lngLatToTile(90, 40, 2)],
   ['z3 中国中心(104,36)', 3, ...lngLatToTile(104, 36, 3)],
   ['z4 中国中心(104,36)', 4, ...lngLatToTile(104, 36, 4)],
   ['z5 上海(121.3,31.2)', 5, ...lngLatToTile(121.3, 31.2, 5)],
+  ['z8 长三角(121.3,31.2)', 8, ...lngLatToTile(121.3, 31.2, 8)],
+  ['z10 长三角(121.3,31.2)', 10, ...lngLatToTile(121.3, 31.2, 10)],
+  ['z12 上海市中心(121.47,31.23)', 12, ...lngLatToTile(121.47, 31.23, 12)],
+  ['z14 上海市中心(121.47,31.23)', 14, ...lngLatToTile(121.47, 31.23, 14)],
 ];
 
 const GEOM_TYPES = { 1: 'Point', 2: 'LineString', 3: 'Polygon' };

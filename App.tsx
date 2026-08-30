@@ -2,11 +2,13 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurTargetView } from 'expo-blur';
 import { colors, glassShadow } from './src/theme';
 import { ALL_TRIPS, CITIES, CityId, dateKey, Trip } from './src/data';
+import { routeFor } from './src/routes';
 import MapView from './src/components/MapView';
 import CityCard from './src/components/CityCard';
-import Glass from './src/components/Glass';
+import Glass, { GlassBlurTargetContext } from './src/components/Glass';
 import BottomSheet, { CityListData, Pane, ReviewMode } from './src/components/BottomSheet';
 import TabBar from './src/components/TabBar';
 import TicketModal from './src/components/TicketModal';
@@ -34,6 +36,8 @@ function Screen() {
 
   const tall = pane === 'city' || pane === 'review';
   const tabHeight = 47 + insets.bottom;
+  // Android 真模糊的采样目标：包住地图，所有玻璃表面的 BlurView 从 context 取它
+  const blurTargetRef = useRef<View>(null);
 
   // ---------- 城市卡 ----------
   const selectCity = useCallback((id: CityId) => {
@@ -140,12 +144,19 @@ function Screen() {
     [cardPos, cardH, onCardMeta]
   );
 
+  // trip 详情打开期间，把该行程发到站的真实铁路线形传给地图高亮；关闭即消失。
+  // 双向复用同一份线形（routeFor 按 from→to 返回方向正确的坐标）。
+  const tripRoute = pane === 'trip' && currentTrip
+    ? routeFor(currentTrip.from, currentTrip.to)
+    : null;
+
   return (
+    <GlassBlurTargetContext.Provider value={blurTargetRef}>
     <View style={styles.screen}>
       <StatusBar style="dark" />
-      <View style={StyleSheet.absoluteFill}>
-        <MapView width={winW} height={winH} selected={selectedCity} pulseKey={pulseKey} onCityPress={selectCity} cardAnchor={cardAnchor} />
-      </View>
+      <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
+        <MapView width={winW} height={winH} selected={selectedCity} pulseKey={pulseKey} tripRoute={tripRoute} onCityPress={selectCity} cardAnchor={cardAnchor} />
+      </BlurTargetView>
 
       {/* 搜索胶囊（车次反查入口，mock 中无点击行为） */}
       <Glass radius={24} style={[styles.search, glassShadow, { top: insets.top + 8 }]} contentStyle={styles.searchInner}>
@@ -198,6 +209,7 @@ function Screen() {
         onClose={() => setTicketVisible(false)}
       />
     </View>
+    </GlassBlurTargetContext.Provider>
   );
 }
 

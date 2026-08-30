@@ -12,6 +12,7 @@ interface Props {
   height: number; // 仅真实地图使用；ChinaMap 按比例自算高度
   selected: CityId;
   pulseKey: number;
+  tripRoute: [number, number][] | null; // 仅真实地图使用；ChinaMap 降级路径跳过线路高亮
   onCityPress: (id: CityId) => void;
   cardAnchor: CardAnchor; // 仅真实地图使用；ChinaMap 降级时卡片停在初始位置
 }
