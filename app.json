@@ -40,7 +40,8 @@
           "isAccessMediaLocationEnabled": false
         }
       ],
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      "expo-font"
     ],
     "extra": {
       "eas": {
